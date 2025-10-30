@@ -56,10 +56,15 @@ def most_recent_sunday(anchor: date | None = None) -> date:
 
 
 def normalize_name_parts(df: pd.DataFrame, first_col: str | None, last_col: str | None, full_col: str | None) -> pd.Series:
-    if full_col and full_col in df.columns:
+    if first_col and last_col and first_col in df.columns and last_col in df.columns:
+        first = df[first_col].fillna("").astype(str).str.strip()
+        last = df[last_col].fillna("").astype(str).str.strip()
+        names = (first + " " + last).str.strip()
+        if full_col and full_col in df.columns:
+            fallback = df[full_col].fillna("").astype(str).str.strip()
+            names = names.mask(names.eq(""), fallback)
+    elif full_col and full_col in df.columns:
         names = df[full_col].astype(str)
-    elif first_col and last_col and first_col in df.columns and last_col in df.columns:
-        names = (df[first_col].astype(str).str.strip() + " " + df[last_col].astype(str).str.strip())
     else:
         # last resort: try to find something that looks like a name
         guessed = infer_column(df, ["employee name", "name"])
@@ -134,7 +139,14 @@ ot_col = st.sidebar.selectbox("Payroll: OT hours column", payroll_df.columns, in
 dt_col = st.sidebar.selectbox("Payroll: DT hours column", payroll_df.columns, index=(list(payroll_df.columns).index(dt_col) if dt_col in payroll_df.columns else 0))
 payrate_col = st.sidebar.selectbox("Payroll: Pay Rate column", payroll_df.columns, index=(list(payroll_df.columns).index(payrate_col) if payrate_col in payroll_df.columns else 0))
 
-name_mode = st.sidebar.radio("Payroll: name source", ["Full name column", "First + Last"], index=(0 if full_name_col else 1))
+if first_col and last_col and first_col in payroll_df.columns and last_col in payroll_df.columns:
+    default_name_index = 1
+elif full_name_col and full_name_col in payroll_df.columns:
+    default_name_index = 0
+else:
+    default_name_index = 0
+
+name_mode = st.sidebar.radio("Payroll: name source", ["Full name column", "First + Last"], index=default_name_index)
 if name_mode == "Full name column":
     full_name_col = st.sidebar.selectbox("Payroll: full name column", payroll_df.columns, index=(list(payroll_df.columns).index(full_name_col) if full_name_col in payroll_df.columns else 0))
     first_col = last_col = None
