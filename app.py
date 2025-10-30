@@ -205,12 +205,24 @@ summary = (
 
 # 4) Prepare Assignment list for matching (normalize name + numeric rate)
 assign_df = assign_df.copy()
-assign_df["_name"] = assign_df[assign_name_col].astype(str).str.replace(r"\s+", " ", regex=True).str.strip()
+assign_df["_name"] = (
+    assign_df[assign_name_col]
+    .astype(str)
+    .str.replace(r"\s+", " ", regex=True)
+    .str.strip()
+    .str.lower()
+)
 assign_df["_rate"] = assign_df[assign_rate_col].apply(to_num)
 assign_df_slim = assign_df[["_name", "_rate", assign_no_col]].drop_duplicates()
 
 # 5) Join to fetch Assignment #
-summary["_name"] = summary["Employee Name"].astype(str).str.replace(r"\s+", " ", regex=True).str.strip()
+summary["_name"] = (
+    summary["Employee Name"]
+    .astype(str)
+    .str.replace(r"\s+", " ", regex=True)
+    .str.strip()
+    .str.lower()
+)
 summary["_rate"] = summary["Pay Rate"].apply(to_num)
 joined = summary.merge(
     assign_df_slim,
